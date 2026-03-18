@@ -1,0 +1,11 @@
+numpy
+scipy
+librosa
+matplotlib
+requests
+mir_eval
+pandas
+tqdm
+scikit-learn
+ipykernel
+notebook
