@@ -1,6 +1,9 @@
 import numpy as np
 import librosa
+import logging
 from config import N_FFT, HOP_LENGTH
+
+logger = logging.getLogger(__name__)
 
 def compute_stft(X, n_fft=N_FFT, hop_length=HOP_LENGTH):
     """
@@ -15,14 +18,18 @@ def compute_stft(X, n_fft=N_FFT, hop_length=HOP_LENGTH):
         stft = librosa.stft(X[i, :], n_fft=n_fft, hop_length=hop_length)
         stft_list.append(stft)
     
-    return np.stack(stft_list)
+    X_stft = np.stack(stft_list)
+    logger.debug(f"Computed STFT. Shape: {X_stft.shape}")
+    return X_stft
 
 def reorder_stft_for_ica(X_stft):
     """
     Reorder STFT from (N_SOURCES, N_BINS, N_FRAMES) 
     to (N_BINS, N_SOURCES, N_FRAMES) for bin-wise ICA.
     """
-    return X_stft.transpose(1, 0, 2)
+    X_reordered = X_stft.transpose(1, 0, 2)
+    logger.debug(f"Reordered STFT for ICA. Shape: {X_reordered.shape}")
+    return X_reordered
 
 def reconstruct_stft_from_ica(Y_stft_reordered):
     """
@@ -32,13 +39,12 @@ def reconstruct_stft_from_ica(Y_stft_reordered):
     return Y_stft_reordered.transpose(1, 0, 2)
 
 if __name__ == "__main__":
+    from config import setup_logging
+    setup_logging(level=logging.DEBUG)
     # Test STFT
     n_sources = 5
     n_samples = 44100 # 1 second
     X = np.random.randn(n_sources, n_samples)
     
     X_stft = compute_stft(X)
-    print(f"STFT shape: {X_stft.shape}") # (5, 1025, 87) approximately
-    
     X_reordered = reorder_stft_for_ica(X_stft)
-    print(f"Reordered STFT shape: {X_reordered.shape}") # (1025, 5, 87)

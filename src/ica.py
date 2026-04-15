@@ -1,4 +1,8 @@
 import numpy as np
+import logging
+from src.exceptions import ConvergenceError, UnderdeterminedError
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Contrast functions for FastICA
@@ -48,6 +52,7 @@ def whiten(X):
     # Eigendecomposition
     d, E = np.linalg.eigh(cov)
     # Whitening matrix: D^(-1/2) * E.T
+    # Add small epsilon to avoid division by zero
     D_inv_sqrt = np.diag(1.0 / np.sqrt(d + 1e-10))
     W_white = D_inv_sqrt @ E.T
     # Dewhitening matrix: E * D^(1/2)
@@ -55,43 +60,12 @@ def whiten(X):
     
     return W_white @ X, W_white, W_dewhite
 
-def fast_ica_step(X_whitened, n_iter=100, tol=1e-5, contrast='tanh'):
-    """
-    FastICA for a single component.
-
-    Parameters:
-        contrast: 'tanh' or 'kurtosis' — which non-linearity to use.
-    Returns:
-        (w, converged, iterations)
-    """
-    g_func, g_prime_func = CONTRAST_FUNCTIONS[contrast]
-    n_sources, n_samples = X_whitened.shape
-
-    w = np.random.randn(n_sources)
-    w /= np.linalg.norm(w)
-    converged = False
-
-    for i in range(n_iter):
-        wtx = w @ X_whitened
-        term1 = (X_whitened * g_func(wtx)).mean(axis=1)
-        term2 = g_prime_func(wtx).mean() * w
-        w_new = term1 - term2
-        w_new /= np.linalg.norm(w_new)
-
-        if np.abs(np.abs(np.dot(w_new, w)) - 1) < tol:
-            converged = True
-            w = w_new
-            break
-        w = w_new
-
-    return w, converged, i + 1
-
 def fast_ica(X, n_sources=None, n_iter=200, tol=1e-5, contrast='tanh'):
     """
     FastICA algorithm (Deflation approach).
 
     Parameters:
-        X: (N_SOURCES, N_SAMPLES) — input mixed signals.
+        X: (N_MIXTURES, N_SAMPLES) — input mixed signals.
         n_sources: number of independent components to extract.
         n_iter: maximum iterations per component.
         tol: convergence tolerance.
@@ -103,6 +77,9 @@ def fast_ica(X, n_sources=None, n_iter=200, tol=1e-5, contrast='tanh'):
         convergence_info: list of dicts, one per component:
             {'component': int, 'converged': bool, 'iterations': int}
     """
+    if np.any(np.isnan(X)):
+        raise ValueError("Input data contains NaNs.")
+
     if contrast not in CONTRAST_FUNCTIONS:
         raise ValueError(
             f"Unknown contrast '{contrast}'. "
@@ -110,51 +87,72 @@ def fast_ica(X, n_sources=None, n_iter=200, tol=1e-5, contrast='tanh'):
         )
     g_func, g_prime_func = CONTRAST_FUNCTIONS[contrast]
 
+    n_mixtures = X.shape[0]
     if n_sources is None:
-        n_sources = X.shape[0]
+        n_sources = n_mixtures
+    
+    if n_mixtures < n_sources:
+        raise UnderdeterminedError(f"Underdetermined problem: {n_mixtures} mixtures < {n_sources} sources.")
 
+    logger.debug(f"Starting FastICA: {n_mixtures} mixtures, {n_sources} sources, {n_iter} max iterations, contrast={contrast}.")
+        
     # 1. Center
     X_centered = center(X)
-
+    
     # 2. Whiten
     X_whitened, W_white, W_dewhite = whiten(X_centered)
-
-    # 3. Iterate (Deflation) with convergence tracking
-    W_ica = np.zeros((n_sources, n_sources))
+    
+    # 3. Iterate (Deflation)
+    W_ica = np.zeros((n_sources, n_mixtures))
     convergence_info = []
-
+    
     for i in range(n_sources):
-        w = np.random.randn(n_sources)
+        w = np.random.randn(n_mixtures)
+        w /= np.linalg.norm(w)
         converged = False
         iterations = 0
-
+        
         for j in range(n_iter):
             iterations = j + 1
             wtx = w @ X_whitened
-            w_new = (X_whitened * g_func(wtx)).mean(axis=1) - g_prime_func(wtx).mean() * w
-
+            
+            # Update rule: w+ = E[X * g(w.T * X)] - E[g'(w.T * X)] * w
+            term1 = (X_whitened * g_func(wtx)).mean(axis=1)
+            term2 = g_prime_func(wtx).mean() * w
+            w_new = term1 - term2
+            
             # Orthogonalize against previously found components
             if i > 0:
                 w_new -= (w_new @ W_ica[:i].T) @ W_ica[:i]
-
+                
             w_new /= np.linalg.norm(w_new)
-
+            
+            # Check convergence
             if np.abs(np.abs(np.dot(w_new, w)) - 1) < tol:
+                logger.debug(f"Component {i} converged in {j+1} iterations.")
                 converged = True
+                w = w_new
                 break
             w = w_new
-
+            
+        if not converged:
+            logger.warning(f"Component {i} did not converge within {n_iter} iterations.")
+            # For frequency-domain ICA, some bins failing is common, so we might not want to raise.
+            # However, for time-domain or per user request, we raise.
+            # As per TODO, let's raise it.
+            raise ConvergenceError(f"Component {i} failed to converge after {n_iter} iterations.")
+            
         W_ica[i, :] = w
         convergence_info.append({
             'component': i,
             'converged': converged,
             'iterations': iterations,
         })
-
+        
     # Un-mixing matrix W = W_ica @ W_white
     W = W_ica @ W_white
     S = W @ X
-
+    
     return S, W, convergence_info
 
 def solve_permutation(Y_stft):
@@ -200,6 +198,9 @@ def solve_permutation(Y_stft):
 
 
 if __name__ == "__main__":
+    from config import setup_logging
+    setup_logging(level=logging.DEBUG)
+    
     # Test ICA with simple signal
     import matplotlib.pyplot as plt
     
@@ -213,18 +214,12 @@ if __name__ == "__main__":
     X = A @ S_true
     
     # Recover
-    S_rec, W_rec, conv_info = fast_ica(X)
-
-    print(f"Original mixing matrix A:\n{A}")
-    print(f"Recovered W inverse (estimated A):\n{np.linalg.inv(W_rec)}")
-    print(f"\nConvergence info:")
-    for ci in conv_info:
-        status = "converged" if ci['converged'] else "NOT converged"
-        print(f"  Component {ci['component']}: {status} in {ci['iterations']} iterations")
-
-    # Test kurtosis contrast
-    S_rec2, _, conv_info2 = fast_ica(X, contrast='kurtosis')
-    print(f"\nKurtosis contrast convergence:")
-    for ci in conv_info2:
-        status = "converged" if ci['converged'] else "NOT converged"
-        print(f"  Component {ci['component']}: {status} in {ci['iterations']} iterations")
+    try:
+        S_rec, W_rec, conv_info = fast_ica(X)
+        logger.info(f"Original mixing matrix A:\n{A}")
+        logger.info(f"Recovered W inverse (estimated A):\n{np.linalg.inv(W_rec)}")
+        for ci in conv_info:
+            status = "converged" if ci['converged'] else "NOT converged"
+            logger.info(f"  Component {ci['component']}: {status} in {ci['iterations']} iterations")
+    except Exception as e:
+        logger.error(f"ICA failed: {e}")

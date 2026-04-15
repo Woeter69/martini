@@ -7,16 +7,16 @@
 ## Phase 1: Foundation & Observability
 
 ### 1.3 Robust Logging
-- [ ] Replace all `print()` / `click.echo()` calls with a proper `logging` module
-- [ ] Add log levels (DEBUG for per-bin convergence, INFO for pipeline stages, WARNING for edge cases)
-- [ ] Log STFT bin convergence iterations and I/O status
-- [ ] Add log file output (e.g. `logs/run_<timestamp>.log`)
+- [x] Replace all `print()` / `click.echo()` calls with a proper `logging` module
+- [x] Add log levels (DEBUG for per-bin convergence, INFO for pipeline stages, WARNING for edge cases)
+- [x] Log STFT bin convergence iterations and I/O status
+- [x] Add log file output (e.g. `logs/run_<timestamp>.log`)
 
 ### 1.4 Custom Error Handling
-- [ ] Create custom exception classes (e.g. `UnderdeterminedError`, `StemLoadError`, `ConvergenceError`)
-- [ ] Raise `UnderdeterminedError` when `n_mixtures < n_sources`
-- [ ] Raise `ConvergenceError` when FastICA doesn't converge within `n_iter`
-- [ ] Add input validation across all modules (e.g. shape checks, NaN detection)
+- [x] Create custom exception classes (e.g. `UnderdeterminedError`, `StemLoadError`, `ConvergenceError`)
+- [x] Raise `UnderdeterminedError` when `n_mixtures < n_sources`
+- [x] Raise `ConvergenceError` when FastICA doesn't converge within `n_iter`
+- [x] Add input validation across all modules (e.g. shape checks, NaN detection)
 
 ---
 

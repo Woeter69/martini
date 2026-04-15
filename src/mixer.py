@@ -1,7 +1,10 @@
 import numpy as np
 import os
 import soundfile as sf
+import logging
 from config import SAMPLE_RATE, DATA_MIXED_DIR
+
+logger = logging.getLogger(__name__)
 
 def generate_mixing_matrix(n_sources=5, seed=None):
     """
@@ -29,8 +32,14 @@ def mix_stems(S, A=None, seed=None):
     If A is None, generate a random matrix.
     Returns X (N_SOURCES, N_SAMPLES) and the mixing matrix A.
     """
+    if S.ndim != 2:
+        raise ValueError(f"S must be 2D (N_SOURCES, N_SAMPLES), got shape {S.shape}")
+        
     n_sources, _ = S.shape
-    if A is None:
+    if A is not None:
+        if A.shape != (n_sources, n_sources):
+             raise ValueError(f"A must be square ({n_sources}, {n_sources}), got shape {A.shape}")
+    else:
         A = generate_mixing_matrix(n_sources, seed=seed)
     
     X = A @ S
@@ -44,18 +53,24 @@ def save_mixes(X, data_dir=DATA_MIXED_DIR, sr=SAMPLE_RATE):
     for i in range(n_channels):
         file_path = os.path.join(data_dir, f"mix_{i}.wav")
         # Normalize to avoid clipping
-        audio = X[i, :] / np.max(np.abs(X[i, :]))
+        max_val = np.max(np.abs(X[i, :]))
+        if max_val > 0:
+            audio = X[i, :] / max_val
+        else:
+            audio = X[i, :]
         sf.write(file_path, audio, sr)
-    print(f"Saved {n_channels} mixes in {data_dir}.")
+    logger.info(f"Saved {n_channels} mixes in {data_dir}.")
 
 if __name__ == "__main__":
+    from config import setup_logging
+    setup_logging()
     # Example usage (test with dummy data)
     n_sources = 5
     n_samples = 44100 * 5 # 5 seconds
     S = np.random.randn(n_sources, n_samples) # Mock stems
     
     X, A = mix_stems(S, seed=42)
-    print(f"Mixing Matrix A:\n{A}")
-    print(f"Mix shape: {X.shape}")
+    logger.info(f"Mixing Matrix A:\n{A}")
+    logger.info(f"Mix shape: {X.shape}")
     
     save_mixes(X)

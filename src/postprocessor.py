@@ -2,7 +2,10 @@ import numpy as np
 import librosa
 import soundfile as sf
 import os
+import logging
 from config import SAMPLE_RATE, HOP_LENGTH, OUTPUTS_STEMS_DIR, STEM_NAMES
+
+logger = logging.getLogger(__name__)
 
 def reconstruct_audio_from_stft(S_stft, hop_length=HOP_LENGTH):
     """
@@ -16,7 +19,9 @@ def reconstruct_audio_from_stft(S_stft, hop_length=HOP_LENGTH):
         audio = librosa.istft(S_stft[i, :, :], hop_length=hop_length)
         audio_list.append(audio)
     
-    return np.stack(audio_list)
+    S_audio = np.stack(audio_list)
+    logger.debug(f"Reconstructed audio from STFT. Shape: {S_audio.shape}")
+    return S_audio
 
 def save_separated_stems(S, names=STEM_NAMES, output_dir=OUTPUTS_STEMS_DIR, sr=SAMPLE_RATE):
     """
@@ -36,9 +41,11 @@ def save_separated_stems(S, names=STEM_NAMES, output_dir=OUTPUTS_STEMS_DIR, sr=S
             audio = audio / max_val
             
         sf.write(file_path, audio, sr)
-    print(f"Saved {n_sources} separated stems in {output_dir}.")
+    logger.info(f"Saved {n_sources} separated stems in {output_dir}.")
 
 if __name__ == "__main__":
+    from config import setup_logging
+    setup_logging(level=logging.DEBUG)
     # Test reconstruction
     n_sources = 5
     n_bins = 1025
@@ -46,4 +53,3 @@ if __name__ == "__main__":
     S_stft = np.random.randn(n_sources, n_bins, n_frames) + 1j * np.random.randn(n_sources, n_bins, n_frames)
     
     S_audio = reconstruct_audio_from_stft(S_stft)
-    print(f"Reconstructed audio shape: {S_audio.shape}")

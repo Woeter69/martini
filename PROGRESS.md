@@ -10,10 +10,10 @@ Implement a robust, non-AI (FastICA from scratch) pipeline to separate $N$ audio
 ---
 
 ## 🛠 Phase 1: Foundation & Observability
-- [ ] **1.1 Singleton Configuration:** A central `config.py` for path resolution, sample rates, and environment validation.
-- [ ] **1.2 Directory Sentinel:** Automatic workspace setup (`data/raw`, `outputs/separated`, `logs/`).
-- [ ] **1.3 Robust Logging:** A production-style logging system to track STFT bin convergence and I/O status.
-- [ ] **1.4 Error Handling:** Custom exceptions for "Underdetermined" cases (too few mixtures for the number of sources).
+- [x] **1.1 Singleton Configuration:** A central `config.py` for path resolution, sample rates, and environment validation.
+- [x] **1.2 Directory Sentinel:** Automatic workspace setup (`data/raw`, `outputs/separated`, `logs/`).
+- [x] **1.3 Robust Logging:** A production-style logging system to track STFT bin convergence and I/O status.
+- [x] **1.4 Error Handling:** Custom exceptions for "Underdetermined" cases (too few mixtures for the number of sources).
 
 ## 🎛 Phase 2: Professional Audio Ingestion
 - [ ] **2.1 Multi-Format Loader:** Support for `wav`, `flac`, and `mp3` using `librosa`/`soundfile`.
@@ -41,4 +41,5 @@ Implement a robust, non-AI (FastICA from scratch) pipeline to separate $N$ audio
 ## 📅 Current Status
 - [x] Initial Project Scaffolding
 - [x] Development Environment Setup (`uv`)
-- [ ] **Currently Working On:** Phase 1 (Foundation)
+- [x] Phase 1 (Foundation) Complete
+- [ ] **Currently Working On:** Phase 2 (Audio Ingestion)
