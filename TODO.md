@@ -42,19 +42,19 @@
 ## Phase 3: Mathematical Separation Core
 
 ### 3.2 FastICA Engine — Enhancements
-- [ ] Add alternative contrast function: `kurtosis` (currently only `tanh`)
-- [ ] Allow user to select contrast function via CLI flag
-- [ ] Add convergence logging (iteration count per component)
+- [x] ~~Add alternative contrast function: `kurtosis`~~ → `g_kurtosis` / `g_prime_kurtosis` in `ica.py` with `CONTRAST_FUNCTIONS` registry
+- [x] ~~Allow user to select contrast function via CLI flag~~ → `--contrast tanh|kurtosis` in `main.py`
+- [x] ~~Add convergence logging (iteration count per component)~~ → `fast_ica` now returns `convergence_info` list; printed in time-mode output
 
 ### 3.3 Bin-Wise Convergence Tracking
-- [ ] Track and log convergence status for each frequency bin independently
-- [ ] Report bins that failed to converge
-- [ ] Add a convergence summary (% of bins converged, avg iterations)
+- [x] ~~Track and log convergence status for each frequency bin independently~~ → `bin_convergence` list collected per bin in `main.py`
+- [x] ~~Report bins that failed to converge~~ → failed bin indices printed (first 10)
+- [x] ~~Add a convergence summary (% of bins converged, avg iterations)~~ → prints fully-converged %, avg iterations, max iterations
 
 ### 3.4 Permutation Solver (**Critical for frequency-domain mode**)
-- [ ] Implement inter-bin correlation method to align source ordering across frequency bins
-- [ ] Alternatively, implement envelope-based tracking for permutation alignment
-- [ ] **Fix `main.py` line 65**: currently `Y_stft_reordered[b] = X_bin` discards the separated output — must use `S_bin_real` to reconstruct the complex separated signal
+- [x] ~~Implement inter-bin correlation method to align source ordering across frequency bins~~ → `solve_permutation()` in `ica.py` using Hungarian algorithm
+- [x] ~~Implement envelope-based tracking for permutation alignment~~ → uses inter-bin envelope correlation
+- [x] ~~**Fix `main.py` line 65**: discarded separated output~~ → now applies `W_bin @ X_bin` to complex STFT + added missing `reconstruct_stft_from_ica` transpose
 
 ---
 
@@ -108,7 +108,7 @@
 
 | Priority | Task | Impact |
 |----------|------|--------|
-| 🔴 High | Fix frequency-domain ICA (permutation solver + line 65 bug) | Core feature is broken |
+| ✅ Done | ~~Fix frequency-domain ICA (permutation solver + line 65 bug)~~ | Fixed in `ica.py` + `main.py` |
 | 🔴 High | Add stem data or download script | Can't run without data |
 | 🟡 Medium | Proper logging & error handling | Developer experience |
 | 🟡 Medium | README & documentation | Usability |
