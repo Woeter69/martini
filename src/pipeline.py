@@ -13,26 +13,14 @@ from config import DATA_RAW_DIR, OUTPUTS_PLOTS_DIR, STEM_NAMES
 
 logger = logging.getLogger(__name__)
 
-def run_separation_pipeline(duration=10.0, mode='time', seed=42, contrast='tanh', 
-                            channels='mono', window='hann', overlap=0.75, normalize='peak'):
+def run_ica_on_mixtures(X, duration=10.0, mode='time', contrast='tanh', 
+                        window='hann', overlap=0.75, normalize='peak'):
     """
-    Executes the full Martini separation pipeline.
-    Returns a dictionary with results.
+    Runs ICA on a provided mixture matrix.
+    Returns estimated sources and unmixing matrix.
     """
-    results = {}
-    
-    # 1. Load Stems
-    stems_dict = load_stems(duration=duration, channel_strategy=channels)
-    S_true = get_stem_matrix(stems_dict)
-    
-    # 2. Mix Stems
-    X, A_true = mix_stems(S_true, seed=seed)
-    save_mixes(X)
-    
-    # 3. ICA Separation
     if mode == 'time':
         S_est, W_est, conv_info = fast_ica(X, contrast=contrast)
-        results['conv_info'] = conv_info
     else:
         X_stft, hop_length = compute_stft(X, window=window, overlap_ratio=overlap)
         X_reordered = reorder_stft_for_ica(X_stft)
@@ -52,9 +40,31 @@ def run_separation_pipeline(duration=10.0, mode='time', seed=42, contrast='tanh'
         Y_stft_reordered = solve_permutation(Y_stft_reordered)
         S_stft = reconstruct_stft_from_ica(Y_stft_reordered)
         S_est = reconstruct_audio_from_stft(S_stft, hop_length=hop_length)
+        W_est = None
 
-    # 4. Save & Evaluate
     save_separated_stems(S_est, normalize=normalize)
+    return S_est, W_est
+
+def run_separation_pipeline(duration=10.0, mode='time', seed=42, contrast='tanh', 
+                            channels='mono', window='hann', overlap=0.75, normalize='peak'):
+    """
+    Executes the full Martini separation pipeline (Load -> Mix -> Separate -> Evaluate).
+    Returns a dictionary with results.
+    """
+    results = {}
+    
+    # 1. Load Stems
+    stems_dict = load_stems(duration=duration, channel_strategy=channels)
+    S_true = get_stem_matrix(stems_dict)
+    
+    # 2. Mix Stems
+    X, A_true = mix_stems(S_true, seed=seed)
+    save_mixes(X)
+    
+    # 3. ICA Separation
+    S_est, W_est = run_ica_on_mixtures(X, duration, mode, contrast, window, overlap, normalize)
+
+    # 4. Evaluate
     sdr, sir, sar, perm = evaluate_separation(S_true, S_est)
     
     results.update({
@@ -68,12 +78,12 @@ def run_separation_pipeline(duration=10.0, mode='time', seed=42, contrast='tanh'
         'A_true': A_true
     })
     
-    # 5. Visualize
+    # 5. Visualize (PNGs for backward compatibility/CLI)
     plot_waveforms(X, "Mixed Channels", save_path=os.path.join(OUTPUTS_PLOTS_DIR, "mixed_waveforms.png"))
     plot_waveforms(S_est, "Separated Channels", save_path=os.path.join(OUTPUTS_PLOTS_DIR, "separated_waveforms.png"))
     plot_matrix(A_true, "True Mixing Matrix", save_path=os.path.join(OUTPUTS_PLOTS_DIR, "true_mixing_matrix.png"))
     
-    if mode == 'time':
+    if mode == 'time' and W_est is not None:
         plot_matrix(np.linalg.inv(W_est), "Estimated Mixing Matrix", 
                    save_path=os.path.join(OUTPUTS_PLOTS_DIR, "est_mixing_matrix.png"))
         
