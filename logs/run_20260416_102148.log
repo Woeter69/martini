@@ -1,0 +1,3 @@
+2026-04-16 10:21:48,512 [INFO] config: Scanning data/raw/ for stems...
+2026-04-16 10:21:48,513 [ERROR] config: No stems found in /home/hy/code/projects/martini/data/raw.
+2026-04-16 10:21:48,513 [INFO] config: Hint: Place .wav, .flac, or .mp3 files named after STEM_NAMES in data/raw/.

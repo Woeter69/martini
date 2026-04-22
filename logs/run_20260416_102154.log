@@ -1,0 +1,6 @@
+2026-04-16 10:21:54,428 [INFO] config: Generated 5 synthetic stems.
+2026-04-16 10:21:54,435 [INFO] config: Saved synthetic vocals to /home/hy/code/projects/martini/data/raw/vocals.wav
+2026-04-16 10:21:54,438 [INFO] config: Saved synthetic drums to /home/hy/code/projects/martini/data/raw/drums.wav
+2026-04-16 10:21:54,442 [INFO] config: Saved synthetic bass to /home/hy/code/projects/martini/data/raw/bass.wav
+2026-04-16 10:21:54,447 [INFO] config: Saved synthetic guitar to /home/hy/code/projects/martini/data/raw/guitar.wav
+2026-04-16 10:21:54,450 [INFO] config: Saved synthetic piano to /home/hy/code/projects/martini/data/raw/piano.wav

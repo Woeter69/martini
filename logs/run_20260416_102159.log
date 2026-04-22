@@ -1,0 +1,17 @@
+2026-04-16 10:21:59,699 [INFO] config: Starting Music Source Separation (time domain, tanh contrast)...
+2026-04-16 10:21:59,699 [INFO] src.loader: Loading stems from /home/hy/code/projects/martini/data/raw with strategy 'mono'...
+2026-04-16 10:22:13,248 [INFO] src.loader: Successfully loaded 5 stems.
+2026-04-16 10:22:13,278 [INFO] src.mixer: Saved 5 mixes in /home/hy/code/projects/martini/data/mixed.
+2026-04-16 10:22:13,328 [INFO] src.postprocessor: Saved 5 separated stems in /home/hy/code/projects/martini/outputs/stems.
+2026-04-16 10:22:13,328 [INFO] src.evaluate: Evaluating separation quality using mir_eval...
+2026-04-16 10:22:25,256 [INFO] src.evaluate: --- Separation Quality Metrics (mir_eval) ---
+2026-04-16 10:22:25,256 [INFO] src.evaluate: Source          | SDR (dB)   | SIR (dB)   | SAR (dB)  
+2026-04-16 10:22:25,256 [INFO] src.evaluate: -------------------------------------------------------
+2026-04-16 10:22:25,256 [INFO] src.evaluate: vocals          | 46.46      | 46.46      | 206.08    
+2026-04-16 10:22:25,256 [INFO] src.evaluate: drums           | 38.03      | 38.03      | 209.35    
+2026-04-16 10:22:25,256 [INFO] src.evaluate: bass            | 50.84      | 50.84      | 174.86    
+2026-04-16 10:22:25,256 [INFO] src.evaluate: guitar          | 17.57      | 17.57      | 174.25    
+2026-04-16 10:22:25,256 [INFO] src.evaluate: piano           | 42.27      | 42.27      | 185.28    
+2026-04-16 10:22:25,256 [INFO] src.evaluate: -------------------------------------------------------
+2026-04-16 10:22:25,256 [INFO] src.evaluate: Average         | 39.04      | 39.04      | 189.96    
+2026-04-16 10:22:25,256 [INFO] config: Done! Check the 'outputs' directory for results.
