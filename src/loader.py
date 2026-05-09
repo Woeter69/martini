@@ -52,9 +52,6 @@ def get_stem_matrix(stems):
     return np.stack([stems[name] for name in STEM_NAMES])
 
 def load_stereo_as_mixtures(file_path, sr=SAMPLE_RATE, duration=None):
-    """
-    Load a single stereo file and return it as a matrix of 2 mixtures (L and R).
-    """
     try:
         audio, _ = librosa.load(file_path, sr=sr, mono=False, duration=duration)
         if audio.ndim == 1:
